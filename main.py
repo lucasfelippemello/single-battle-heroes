@@ -1,12 +1,65 @@
+import sys
+import pygame
 import random
 import time
+import os
 
-class Hero:
+worldx = 960
+worldy = 720
+fps = 40
+ani = 4
+world = pygame.display.set_mode([worldx, worldy])
+
+BLUE = (25, 25, 200)
+BLACK = (23, 23, 23)
+WHITE = (254, 254, 254)
+ALPHA = (0, 255, 0)
+
+backdrop = pygame.image.load(os.path.join('heroSprites\sprites', 'png-transparent-chicken-rooster-poultry-contact-page-chicken-web-design-animals-chicken-thumbnail.png'))
+clock = pygame.time.Clock()
+pygame.init()
+backdropbox = world.get_rect()
+main = True
+
+class Hero(pygame.sprite.Sprite):
 
     def __init__(self, heroname, herolife, herodamage) -> None:
+        pygame.sprite.Sprite.__init__(self)
+        self.movex = 0 # move along X
+        self.movey = 0 # move along Y
+        self.frame = 0 # count frames
         self.__name = heroname
         self.__life = herolife
         self.__damage = herodamage
+        self.images = []
+        for i in range(1, 5):
+            img = pygame.image.load(os.path.join('heroSprites\sprites', 'walk' + str(i) + '.png')).convert()
+            img.convert_alpha()  # optimise alpha
+            img.set_colorkey(ALPHA)  # set alpha
+            self.images.append(img)
+            self.image = self.images[0]
+            self.rect = self.image.get_rect()
+
+    def control(self, x, y):
+        self.movex += x
+        self.movey += y 
+
+    def update(self):
+        self.rect.x = self.rect.x + self.movex
+        self.rect.y = self.rect.y + self.movey
+
+        if self.movex < 0:
+            self.frame += 1
+            if self.frame > 3*ani:
+                self.frame = 0
+            self.image = self.images[self.frame//ani]
+
+        # moving right
+        if self.movex > 0:
+            self.frame += 1
+            if self.frame > 3*ani:
+                self.frame = 0
+            self.image = self.images[self.frame//ani]
 
     def getName(self):
         return self.__name
@@ -85,7 +138,32 @@ def main():
 
         time.sleep(1)
 
+def characterControl():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT or event.key == ord('a'):
+                    player.control(-steps, 0)
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RIGHT or event.key == ord('d'):
+                    player.control(steps, 0)
+
+        world.blit(backdrop, backdropbox)
+        player.update()
+        player_list.draw(world)
+        pygame.display.flip()
+        clock.tick(fps)            
 
 if __name__ == "__main__":
-    main()
+    player = Hero('frolinho', 10, 1)  # spawn player
+    player.rect.x = 0  # go to x
+    player.rect.y = 0  # go to y
+    player_list = pygame.sprite.Group()
+    player_list.add(player)
+    steps = 10
+    characterControl()
